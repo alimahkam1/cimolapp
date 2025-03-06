@@ -214,6 +214,12 @@ def project_recommendation_mode():
             )
             st.success("Permintaan telah dikirim ke manajemen dan dicatat!")
 
+# Set your page title and icon
+st.set_page_config(
+    page_title="Cimolbot",  # Replace with your desired title
+    page_icon="🍡"         # You can use an emoji or a path to an image file
+)
+
 def main():
     st.title("🤖 Data Role Cimolbot  🍡 ")
 
