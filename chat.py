@@ -4,6 +4,7 @@ import PyPDF2
 import os
 import time
 from datetime import datetime
+import requests  # New: For sending webhook requests
 from openai import OpenAI  # Ensure you have the correct openai version installed
 
 # -------------------------------
@@ -31,6 +32,22 @@ client = OpenAI(
     base_url=st.secrets["openai"]["base_url"],
     default_headers={"x-api-key": st.secrets["openai"]["header"]}
 )
+
+# -------------------------------
+# Webhook Function to Trigger Power Automate
+# -------------------------------
+def trigger_power_automate(payload: dict):
+    # Retrieve the Power Automate webhook URL from Streamlit secrets
+    webhook_url = st.secrets.get("power_automate_webhook_url")
+    if not webhook_url:
+        st.error("Power Automate webhook URL not configured.")
+        return None
+    try:
+        response = requests.post(webhook_url, json=payload)
+        return response
+    except Exception as e:
+        st.error(f"Error triggering Power Automate: {str(e)}")
+        return None
 
 # -------------------------------
 # Chatbot Functions (Normal Mode)
@@ -158,9 +175,8 @@ def chatbot_mode():
         else:
             st.markdown(f"**Bot:** {msg['content']}")
 
-
 def project_recommendation_mode():
-    st.subheader("Mode Rekomendasi Talent")
+    st.subheader("Mode Rekomendasi Proyek")
     if "project_recommendation_done" not in st.session_state:
         st.session_state.project_recommendation_done = False
     if "project_recommendation_result" not in st.session_state:
@@ -203,6 +219,7 @@ def project_recommendation_mode():
             "Apakah Anda setuju dengan rekomendasi ini dan ingin meneruskan permintaan ke manajemen?"
         )
         if st.button("Setuju & Kirim ke Manajemen"):
+            # Log the recommendation locally
             log_recommendation(
                 st.session_state.user_name,
                 st.session_state.user_unit,
@@ -212,8 +229,25 @@ def project_recommendation_mode():
                 st.session_state.project_recommendation_result["recommended_talents"],
                 st.session_state.project_recommendation_result["matched_candidates"]
             )
-            st.success("Permintaan telah dikirim ke manajemen dan dicatat!")
-
+            
+            # Prepare payload for Power Automate webhook
+            payload = {
+                "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "Name": st.session_state.user_name,
+                "Unit": st.session_state.user_unit,
+                "Email": st.session_state.user_email,
+                "User Input": st.session_state.project_user_input,
+                "Recommended Role": st.session_state.project_recommendation_result["recommended_role"],
+                "Recommended Talents": st.session_state.project_recommendation_result["recommended_talents"],
+                "Matched Talent List": st.session_state.project_recommendation_result["matched_candidates"]
+            }
+            # Trigger Power Automate via webhook
+            response = trigger_power_automate(payload)
+            if response and response.status_code == 200:
+                st.success("Permintaan telah dikirim ke manajemen dan dicatat!")
+            else:
+                st.error("Gagal mengirim permintaan ke Power Automate. Silakan coba lagi.")
+                
 # Set your page title and icon
 st.set_page_config(
     page_title="Cimolbot",  # Replace with your desired title
@@ -243,7 +277,7 @@ def main():
     st.session_state.user_unit = user_unit
     st.session_state.user_email = user_email
 
-    mode = st.sidebar.radio("Pilih Alur:", ("Chatbot", "Rekomendasi Talent"))
+    mode = st.sidebar.radio("Pilih Alur:", ("Chatbot", "Rekomendasi Proyek"))
     
     if mode == "Chatbot":
         chatbot_mode()
