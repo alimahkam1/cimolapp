@@ -27,9 +27,9 @@ pdf_text = extract_pdf_text("Data Roles Indonesian.pdf")
 # LLM API Initialization
 # -------------------------------
 client = OpenAI(
-    api_key="randomkey",  # Replace with your API key
-    base_url="https://telkom-ai-dag-api.apilogy.id/Telkom-LLM/0.0.4/llm",
-    default_headers={"x-api-key": "88JWNTBHM4OXBusCLZuBYGUGBBrTE2iD"}  # Replace with your API key
+    api_key=st.secrets["openai"]["api_key"],
+    base_url=st.secrets["openai"]["base_url"],
+    default_headers={"x-api-key": st.secrets["openai"]["header"]}
 )
 
 # -------------------------------
