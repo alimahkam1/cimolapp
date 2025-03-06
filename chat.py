@@ -244,7 +244,7 @@ def project_recommendation_mode():
             # Trigger Power Automate via webhook
             response = trigger_power_automate(payload)
             if response and response.status_code == 200:
-                st.success("Permintaan telah dikirim ke manajemen dan dicatat!")
+                st.success("ABPermintaan telah dikirim ke manajemen dan dicatat!")
             else:
                 st.error("Gagal mengirim permintaan ke Power Automate. Silakan coba lagi.")
                 
