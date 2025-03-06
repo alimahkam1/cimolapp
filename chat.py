@@ -160,7 +160,7 @@ def chatbot_mode():
 
 
 def project_recommendation_mode():
-    st.subheader("Mode Rekomendasi Proyek")
+    st.subheader("Mode Rekomendasi Talent")
     if "project_recommendation_done" not in st.session_state:
         st.session_state.project_recommendation_done = False
     if "project_recommendation_result" not in st.session_state:
@@ -243,7 +243,7 @@ def main():
     st.session_state.user_unit = user_unit
     st.session_state.user_email = user_email
 
-    mode = st.sidebar.radio("Pilih Alur:", ("Chatbot", "Rekomendasi Proyek"))
+    mode = st.sidebar.radio("Pilih Alur:", ("Chatbot", "Rekomendasi Talent"))
     
     if mode == "Chatbot":
         chatbot_mode()
