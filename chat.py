@@ -282,7 +282,7 @@ def main():
         unsafe_allow_html=True
     )
 
-    st.title("🤖 Data Role Cimolbot  🍡 🍡 ")
+    st.title("🤖 Data Role Cimolbot  🍡")
 
     st.sidebar.markdown("### Informasi Diri")
     user_name = st.sidebar.text_input("Nama:")
