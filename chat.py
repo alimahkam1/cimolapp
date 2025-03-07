@@ -162,14 +162,6 @@ def project_recommendation_mode():
     if "project_user_input" not in st.session_state:
         st.session_state.project_user_input = ""
 
-    # Only show Clear Chat button if a recommendation has already been generated
-    if st.session_state.project_recommendation_done:
-        if st.button("Clear Chat"):
-            st.session_state.project_recommendation_done = False
-            st.session_state.project_recommendation_result = {}
-            st.session_state.project_user_input = ""
-            st.experimental_rerun()
-
     user_input = st.text_input("Apa kebutuhan data proyek Anda?", key="proj_input")
     
     if user_input and not st.session_state.project_recommendation_done:
@@ -226,39 +218,47 @@ def project_recommendation_mode():
             "Berdasarkan rangkuman di atas, kami telah memilih talent dengan role dan kemampuan yang sesuai dengan kebutuhan projek Anda.\n\n"
             "Apakah Anda setuju dengan rekomendasi ini dan ingin meneruskan permintaan ke manajemen?"
         )
-        if st.button("Setuju & Kirim ke Manajemen"):
-            log_recommendation(
-                st.session_state.user_name,
-                st.session_state.user_unit,
-                st.session_state.user_email,
-                st.session_state.project_user_input,
-                st.session_state.project_recommendation_result["dynamic_response"],
-                st.session_state.project_recommendation_result["selected_talent"]
-            )
-            
-            # Prepare payload with expected fields for Power Automate
-            try:
-                dynamic_json = json.loads(st.session_state.project_recommendation_result["dynamic_response"])
-                recommended_role = dynamic_json.get("recommended_role", "Not Specified")
-            except Exception as e:
-                recommended_role = "Not Specified"
-            
-            payload = {
-                "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "Name": st.session_state.user_name,
-                "Unit": st.session_state.user_unit,
-                "Email": st.session_state.user_email,
-                "User Input": st.session_state.project_user_input,
-                "Recommended Role": recommended_role,
-                "Recommended Talents": st.session_state.project_recommendation_result["selected_talent"],
-                "Dynamic Response": st.session_state.project_recommendation_result["dynamic_response"],
-                "Selected Talent": st.session_state.project_recommendation_result["selected_talent"]
-            }
-            response = trigger_power_automate(payload)
-            if response and response.status_code in [200, 202]:
-                st.success("Permintaan telah dikirim ke manajemen dan dicatat!")
-            else:
-                st.error("Gagal mengirim permintaan ke Power Automate. Silakan coba lagi.")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Setuju & Kirim ke Manajemen"):
+                log_recommendation(
+                    st.session_state.user_name,
+                    st.session_state.user_unit,
+                    st.session_state.user_email,
+                    st.session_state.project_user_input,
+                    st.session_state.project_recommendation_result["dynamic_response"],
+                    st.session_state.project_recommendation_result["selected_talent"]
+                )
+                
+                # Prepare payload with expected fields for Power Automate
+                try:
+                    dynamic_json = json.loads(st.session_state.project_recommendation_result["dynamic_response"])
+                    recommended_role = dynamic_json.get("recommended_role", "Not Specified")
+                except Exception as e:
+                    recommended_role = "Not Specified"
+                
+                payload = {
+                    "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "Name": st.session_state.user_name,
+                    "Unit": st.session_state.user_unit,
+                    "Email": st.session_state.user_email,
+                    "User Input": st.session_state.project_user_input,
+                    "Recommended Role": recommended_role,
+                    "Recommended Talents": st.session_state.project_recommendation_result["selected_talent"],
+                    "Dynamic Response": st.session_state.project_recommendation_result["dynamic_response"],
+                    "Selected Talent": st.session_state.project_recommendation_result["selected_talent"]
+                }
+                response = trigger_power_automate(payload)
+                if response and response.status_code in [200, 202]:
+                    st.success("Permintaan telah dikirim ke manajemen dan dicatat!")
+                else:
+                    st.error("Gagal mengirim permintaan ke Power Automate. Silakan coba lagi.")
+        with col2:
+            if st.button("Clear Chat"):
+                st.session_state.project_recommendation_done = False
+                st.session_state.project_recommendation_result = {}
+                st.session_state.project_user_input = ""
+                st.experimental_rerun()
 
 st.set_page_config(
     page_title="Cimolbot",
