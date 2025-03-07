@@ -191,4 +191,106 @@ def project_recommendation_mode():
         loading_placeholder.empty()
     
     # 2) If a recommendation has been generated, display it
-    if 
+    if st.session_state.project_recommendation_done:
+        st.subheader("🤖 Rekomendasi (LLM-enhanced):")
+        try:
+            dynamic_data = json.loads(st.session_state.project_recommendation_result["dynamic_response"])
+        except Exception:
+            dynamic_data = {}
+        if dynamic_data:
+            st.markdown("### Rekomendasi")
+            st.markdown(f"**Recommended Role:** {dynamic_data.get('recommended_role', 'N/A')}")
+            st.markdown(f"**Talent Count:** {dynamic_data.get('talent_count', 'N/A')}")
+            st.markdown(f"**Description:** {dynamic_data.get('description', 'N/A')}")
+        else:
+            st.write("Dynamic Response:", st.session_state.project_recommendation_result["dynamic_response"])
+        
+        try:
+            selected_talent_data = json.loads(st.session_state.project_recommendation_result["selected_talent"])
+        except Exception:
+            selected_talent_data = st.session_state.project_recommendation_result["selected_talent"]
+        st.markdown("### Selected Talent")
+        if isinstance(selected_talent_data, list):
+            talent_df = pd.DataFrame(selected_talent_data)
+            st.dataframe(talent_df)
+        else:
+            st.write("Selected Talent:", selected_talent_data)
+        
+        st.markdown("### 📋 Konfirmasi")
+        st.write(
+            "Berdasarkan rangkuman di atas, kami telah memilih talent dengan role dan kemampuan yang sesuai "
+            "dengan kebutuhan proyek Anda.\n\n"
+            "Apakah Anda setuju dengan rekomendasi ini dan ingin meneruskan permintaan ke manajemen?"
+        )
+
+        # "Setuju & Kirim ke Manajemen" button
+        if st.button("Setuju & Kirim ke Manajemen"):
+            log_recommendation(
+                st.session_state.user_name,
+                st.session_state.user_unit,
+                st.session_state.user_email,
+                st.session_state.project_user_input,
+                st.session_state.project_recommendation_result["dynamic_response"],
+                st.session_state.project_recommendation_result["selected_talent"]
+            )
+            
+            try:
+                dynamic_json = json.loads(st.session_state.project_recommendation_result["dynamic_response"])
+                recommended_role = dynamic_json.get("recommended_role", "Not Specified")
+            except Exception:
+                recommended_role = "Not Specified"
+            
+            payload = {
+                "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "Name": st.session_state.user_name,
+                "Unit": st.session_state.user_unit,
+                "Email": st.session_state.user_email,
+                "User Input": st.session_state.project_user_input,
+                "Recommended Role": recommended_role,
+                "Recommended Talents": st.session_state.project_recommendation_result["selected_talent"],
+                "Dynamic Response": st.session_state.project_recommendation_result["dynamic_response"],
+                "Selected Talent": st.session_state.project_recommendation_result["selected_talent"]
+            }
+            response = trigger_power_automate(payload)
+            if response and response.status_code in [200, 202]:
+                st.success("Permintaan telah dikirim ke manajemen dan dicatat!")
+            else:
+                st.error("Gagal mengirim permintaan ke Power Automate. Silakan coba lagi.")
+
+# -------------------------------
+# App Initialization & Main Flow
+# -------------------------------
+st.set_page_config(
+    page_title="Cimolbot",
+    page_icon="🍡"
+)
+
+def main():
+    st.title("🤖 Data Role Cimolbot  🍡 🍡 ")
+
+    st.sidebar.markdown("### Informasi Diri")
+    user_name = st.sidebar.text_input("Nama:")
+    user_unit = st.sidebar.selectbox("Unit:", [
+        "AGR", "BSP", "DAG", "DBE", "DEX", "DOA", "DPE", "DPM",
+        "DSC", "DSZ", "EDU", "ENT", "EWZ", "GTP", "IDM", "IHX",
+        "INS", "IOT", "LGS", "MKT", "PAS", "SMB", "SVC", "TOS"
+    ])
+    user_email = st.sidebar.text_input("Email:")
+
+    if not (user_name and user_unit and user_email):
+        st.sidebar.warning("Silakan lengkapi informasi diri Anda.")
+        st.stop()
+
+    st.session_state.user_name = user_name
+    st.session_state.user_unit = user_unit
+    st.session_state.user_email = user_email
+
+    mode = st.sidebar.radio("Pilih Alur:", ("Chatbot", "Rekomendasi Proyek"))
+    
+    if mode == "Chatbot":
+        chatbot_mode()
+    else:
+        project_recommendation_mode()
+
+if __name__ == "__main__":
+    main()
