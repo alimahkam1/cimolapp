@@ -38,7 +38,7 @@ client = OpenAI(
 # -------------------------------
 def trigger_power_automate(payload: dict):
     # Retrieve the Power Automate webhook URL from Streamlit secrets
-    webhook_url = st.secrets.get("power_automate_webhook_url")
+    webhook_url = "https://prod-59.southeastasia.logic.azure.com:443/workflows/600114214da148eea88c68bed87b2f46/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=oxPCcf0WivPxuIz_gcRUnj8qFEfTPHelRgEcCJzSd_w"
     if not webhook_url:
         st.error("Power Automate webhook URL not configured.")
         return None
