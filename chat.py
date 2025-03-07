@@ -154,6 +154,16 @@ def chatbot_mode():
 
 def project_recommendation_mode():
     st.subheader("Mode Rekomendasi Proyek")
+    
+    # -------------------------------
+    # Clear Chat Button
+    # -------------------------------
+    if st.button("Clear Chat"):
+        st.session_state.project_recommendation_done = False
+        st.session_state.project_recommendation_result = {}
+        st.session_state.project_user_input = ""
+        st.experimental_rerun()
+    
     if "project_recommendation_done" not in st.session_state:
         st.session_state.project_recommendation_done = False
     if "project_recommendation_result" not in st.session_state:
