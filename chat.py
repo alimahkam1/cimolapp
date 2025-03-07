@@ -43,7 +43,10 @@ def trigger_power_automate(payload: dict):
         st.error("Power Automate webhook URL not configured.")
         return None
     try:
-        response = requests.post(webhook_url, json=payload)
+        # Added a timeout for the request and logging of response details for debugging.
+        response = requests.post(webhook_url, json=payload, timeout=10)
+        st.write("Response code:", response.status_code)
+        st.write("Response body:", response.text)
         return response
     except Exception as e:
         st.error(f"Error triggering Power Automate: {str(e)}")
@@ -241,13 +244,16 @@ def project_recommendation_mode():
                 "Recommended Talents": st.session_state.project_recommendation_result["recommended_talents"],
                 "Matched Talent List": st.session_state.project_recommendation_result["matched_candidates"]
             }
+
+            
             # Trigger Power Automate via webhook
             response = trigger_power_automate(payload)
             if response and response.status_code == 200:
                 st.success("Permintaan telah dikirim ke manajemen dan dicatat!")
             else:
                 st.error("Gagal mengirim permintaan ke Power Automate. Silakan coba lagi.")
-                
+
+            
 # Set your page title and icon
 st.set_page_config(
     page_title="Cimolbot",  # Replace with your desired title
