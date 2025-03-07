@@ -215,10 +215,12 @@ def project_recommendation_mode():
         
         st.markdown("### 📋 Konfirmasi")
         st.write(
-            "Berdasarkan rangkuman di atas, kami telah memilih talent dengan role dan kemampuan yang sesuai dengan kebutuhan projek Anda.\n\n"
+            "Berdasarkan rangkuman di atas, kami telah memilih talent dengan role dan kemampuan yang sesuai "
+            "dengan kebutuhan proyek Anda.\n\n"
             "Apakah Anda setuju dengan rekomendasi ini dan ingin meneruskan permintaan ke manajemen?"
         )
-        col1, col2 = st.columns(2)
+        # Two columns for buttons, with minimal gap to keep them closer
+        col1, col2 = st.columns([1,1], gap="small")
         with col1:
             if st.button("Setuju & Kirim ke Manajemen"):
                 log_recommendation(
@@ -266,6 +268,20 @@ st.set_page_config(
 )
 
 def main():
+    # Inject custom CSS for hover effect on all Streamlit buttons
+    st.markdown(
+        """
+        <style>
+        /* Change hover background and text color for all st.button elements */
+        div.stButton > button:hover {
+            background-color: #e6e6e6 !important; /* Light gray hover */
+            color: #000000 !important;            /* Black text on hover */
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
     st.title("🤖 Data Role Cimolbot  🍡 🍡 ")
 
     st.sidebar.markdown("### Informasi Diri")
