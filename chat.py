@@ -99,7 +99,7 @@ def select_talent_from_pool(dynamic_response: str, talent_pool_df: pd.DataFrame)
         "Berikut adalah data talent yang tersedia dalam format CSV:\n"
         f"{talent_pool_text}\n\n"
         "Berdasarkan rekomendasi di atas, pilihlah talent yang sesuai dengan peran yang direkomendasikan dan jumlah yang dibutuhkan. "
-        "Keluarkan hasilnya dalam format JSON array, di mana setiap entry merupakan objek dengan kunci 'Nama', 'JOB ROLE USECASE', dan kunci relevan lainnya jika perlu."
+        "Keluarkan hasilnya dalam format JSON. Pastikan jumlah talent yang dipilih jumlahnya sama dengan jumlah talent yang direkomendasikan pada dynamic_response, di mana setiap entry merupakan objek dengan kunci 'Nama', 'JOB ROLE USECASE', dan kunci relevan lainnya jika perlu."
     )
     completion = client.chat.completions.create(
         model="telkom-ai",
