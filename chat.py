@@ -5,8 +5,8 @@ import os
 import time
 import re
 from datetime import datetime
-import requests  # For sending webhook requests
-from openai import OpenAI  # Ensure you have the correct openai version installed
+import requests
+from openai import OpenAI
 
 # -------------------------------
 # Data & PDF Initialization 
@@ -60,7 +60,6 @@ def parse_recommended_talent_count(dynamic_response: str):
     'Jumlah Talenta: 1-2' or 'Jumlah Talenta: 3'
     Returns a tuple (min_count, max_count).
     """
-    # Look for a line starting with 'Jumlah Talenta:'
     match = re.search(r"Jumlah\s*Talenta:\s*(.*)", dynamic_response)
     if not match:
         # Default to (1, 1) if not found
@@ -68,17 +67,14 @@ def parse_recommended_talent_count(dynamic_response: str):
     
     count_str = match.group(1).strip()  # e.g. "1-2" or "3"
     
-    # If there's a dash, treat it as a range like "1-2"
     if '-' in count_str:
         parts = count_str.split('-')
         try:
             min_count = int(parts[0])
             max_count = int(parts[1])
         except ValueError:
-            # If parsing fails, default to (1,1)
             return (1, 1)
     else:
-        # If there's no dash, treat it as a single integer
         try:
             min_count = max_count = int(count_str)
         except ValueError:
@@ -110,7 +106,6 @@ def chatbot_response(user_input: str, chat_history: list) -> str:
 # Project Recommendation Functions (Recommendation Mode)
 # -------------------------------
 def generate_dynamic_response(user_input: str, context: str) -> str:
-    # Instruct the LLM to output a plain-text recommendation
     prompt = (
         f"Berikut adalah informasi mengenai peran data dari dokumen:\n{context}\n\n"
         f"Pertanyaan pengguna: {user_input}\n"
@@ -132,10 +127,10 @@ def select_talent_from_pool(dynamic_response: str, talent_pool_df: pd.DataFrame)
     # 1) Parse the recommended min/max from the dynamic response
     min_count, max_count = parse_recommended_talent_count(dynamic_response)
     
-    # 2) Convert the talent pool dataframe to CSV text for context
+    # 2) Convert the talent pool to CSV text for context
     talent_pool_text = talent_pool_df.to_csv(index=False)
     
-    # 3) Add instructions to only pick min_count to max_count talents
+    # 3) Prompt the LLM to select only min_count to max_count talents
     prompt = (
         "Berikut adalah rekomendasi yang telah diberikan (dalam format teks biasa):\n"
         f"{dynamic_response}\n\n"
@@ -152,7 +147,20 @@ def select_talent_from_pool(dynamic_response: str, talent_pool_df: pd.DataFrame)
         messages=[{"role": "user", "content": prompt}],
         temperature=0
     )
-    return completion.choices[0].message.content
+    
+    # 4) Post-process the LLM's response to ensure it doesn't exceed max_count lines
+    selected_text = completion.choices[0].message.content.strip()
+    lines = [l.strip() for l in selected_text.split('\n') if l.strip()]
+    
+    # If LLM returns more lines than max_count, truncate them
+    if len(lines) > max_count:
+        lines = lines[:max_count]
+    
+    # If LLM returns fewer lines than min_count, we keep them (can't magically create more).
+    # Optionally, you can handle that scenario differently.
+    
+    final_selection = '\n'.join(lines)
+    return final_selection
 
 def log_recommendation(user_name: str, user_unit: str, user_email: str, user_input: str, 
                        dynamic_response: str, selected_talent: str) -> None:
@@ -294,7 +302,7 @@ st.set_page_config(
 )
 
 def main():
-    st.title("🤖 Data Role Cimolbot  🍡  ")
+    st.title("🤖 Data Role Cimolbot  🍡 🍡 ")
 
     st.sidebar.markdown("### Informasi Diri")
     user_name = st.sidebar.text_input("Nama:")
