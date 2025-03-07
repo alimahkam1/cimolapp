@@ -154,12 +154,21 @@ def chatbot_mode():
 
 def project_recommendation_mode():
     st.subheader("Mode Rekomendasi Proyek")
+    
     if "project_recommendation_done" not in st.session_state:
         st.session_state.project_recommendation_done = False
     if "project_recommendation_result" not in st.session_state:
         st.session_state.project_recommendation_result = {}
     if "project_user_input" not in st.session_state:
         st.session_state.project_user_input = ""
+
+    # Only show Clear Chat button if a recommendation has already been generated
+    if st.session_state.project_recommendation_done:
+        if st.button("Clear Chat"):
+            st.session_state.project_recommendation_done = False
+            st.session_state.project_recommendation_result = {}
+            st.session_state.project_user_input = ""
+            st.experimental_rerun()
 
     user_input = st.text_input("Apa kebutuhan data proyek Anda?", key="proj_input")
     
