@@ -5,11 +5,11 @@ import os
 import time
 import json
 from datetime import datetime
-import requests  # For sending webhook requests
-from openai import OpenAI  # Ensure you have the correct openai version installed
+import requests
+from openai import OpenAI
 
 # -------------------------------
-# Data & PDF Initialization 
+# Data & PDF Initialization
 # -------------------------------
 talent_pool_df = pd.read_excel('talentpool.xlsx')
 
@@ -91,17 +91,18 @@ def generate_dynamic_response(user_input: str, context: str) -> str:
     return completion.choices[0].message.content
 
 def select_talent_from_pool(dynamic_response: str, talent_pool_df: pd.DataFrame) -> str:
-    # Convert the talent pool dataframe to CSV text for context
     talent_pool_text = talent_pool_df.to_csv(index=False)
     prompt = (
-        "Berikut adalah respons dinamis yang berisi rekomendasi peran dan jumlah talent yang dibutuhkan dalam format JSON:\n"
+        "Berikut adalah respons dinamis yang berisi rekomendasi peran dan jumlah talent yang dibutuhkan "
+        "dalam format JSON:\n"
         f"{dynamic_response}\n\n"
         "Berikut adalah data talent yang tersedia dalam format CSV:\n"
         f"{talent_pool_text}\n\n"
-        "Berdasarkan rekomendasi di atas, pilihlah talent yang sesuai dengan peran yang direkomendasikan dan jumlah yang dibutuhkan, "
-        "serta siap diassign. Keluarkan hasilnya dalam format JSON dengan jumlah talent yang dipilih sama dengan jumlah yang "
-        "direkomendasikan pada dynamic_response. Setiap entry harus berupa objek dengan kunci 'Nama', 'JOB ROLE USECASE', dan "
-        "kunci relevan lainnya jika diperlukan. Jangan sertakan detail tentang status penugasan."
+        "Berdasarkan rekomendasi di atas, pilihlah talent yang sesuai dengan peran yang direkomendasikan "
+        "dan jumlah yang dibutuhkan, serta siap diassign. Keluarkan hasilnya dalam format JSON dengan jumlah "
+        "talent yang dipilih sama dengan jumlah yang direkomendasikan pada dynamic_response. Setiap entry harus "
+        "berupa objek dengan kunci 'Nama', 'JOB ROLE USECASE', dan kunci relevan lainnya jika diperlukan. "
+        "Jangan sertakan detail tentang status penugasan."
     )
     completion = client.chat.completions.create(
         model="telkom-ai",
@@ -131,6 +132,23 @@ def log_recommendation(user_name: str, user_unit: str, user_email: str, user_inp
     log_df.to_csv(log_file, index=False)
 
 # -------------------------------
+# Function to Clear Chat/Recommendation
+# -------------------------------
+def clear_chat():
+    """
+    Clears both the chatbot history and the project recommendation session state,
+    returning the app to a blank-slate condition (except for user name/unit/email).
+    """
+    # Clear chatbot
+    if "chat_history" in st.session_state:
+        st.session_state.chat_history = []
+    
+    # Clear recommendation mode
+    st.session_state.project_recommendation_done = False
+    st.session_state.project_recommendation_result = {}
+    st.session_state.project_user_input = ""
+
+# -------------------------------
 # Streamlit UI: Flow Selection & Interfaces
 # -------------------------------
 def chatbot_mode():
@@ -153,6 +171,11 @@ def chatbot_mode():
             st.markdown(f"**User:** {msg['content']}")
         else:
             st.markdown(f"**Bot:** {msg['content']}")
+
+    # Optional: A "Clear Chat" button here for chatbot mode only
+    # if st.button("Clear Chat (Chatbot)"):
+    #     clear_chat()
+    #     # st.experimental_rerun()  # Use only if needed and doesn't cause errors
 
 def project_recommendation_mode():
     st.subheader("Mode Rekomendasi Proyek")
@@ -179,9 +202,8 @@ def project_recommendation_mode():
                 unsafe_allow_html=True
             )
             time.sleep(0.5)
-        # Generate dynamic response (JSON format)
+        # Generate dynamic response
         dynamic_response = generate_dynamic_response(user_input, pdf_text)
-        # Select proper talent from the talent pool
         selected_talent = select_talent_from_pool(dynamic_response, talent_pool_df)
         st.session_state.project_recommendation_result = {
             "dynamic_response": dynamic_response,
@@ -195,7 +217,7 @@ def project_recommendation_mode():
         st.subheader("🤖 Rekomendasi (LLM-enhanced):")
         try:
             dynamic_data = json.loads(st.session_state.project_recommendation_result["dynamic_response"])
-        except Exception as e:
+        except Exception:
             dynamic_data = {}
         if dynamic_data:
             st.markdown("### Rekomendasi")
@@ -207,7 +229,7 @@ def project_recommendation_mode():
         
         try:
             selected_talent_data = json.loads(st.session_state.project_recommendation_result["selected_talent"])
-        except Exception as e:
+        except Exception:
             selected_talent_data = st.session_state.project_recommendation_result["selected_talent"]
         st.markdown("### Selected Talent")
         if isinstance(selected_talent_data, list):
@@ -237,7 +259,7 @@ def project_recommendation_mode():
             try:
                 dynamic_json = json.loads(st.session_state.project_recommendation_result["dynamic_response"])
                 recommended_role = dynamic_json.get("recommended_role", "Not Specified")
-            except Exception as e:
+            except Exception:
                 recommended_role = "Not Specified"
             
             payload = {
@@ -257,18 +279,11 @@ def project_recommendation_mode():
             else:
                 st.error("Gagal mengirim permintaan ke Power Automate. Silakan coba lagi.")
 
-        # Updated "Clear Chat" button functionality:
+        # Updated "Clear Chat" button: calls clear_chat()
         if st.button("Clear Chat"):
-            # Option A: Clear the session state variables and force a rerun
-            st.session_state.project_recommendation_done = False
-            st.session_state.project_recommendation_result = {}
-            st.session_state.project_user_input = ""
-
-
-            # Option B: Alternatively, you can simply clear the session state variables without forcing a rerun:
-            # st.session_state.project_recommendation_done = False
-            # st.session_state.project_recommendation_result = {}
-            # st.session_state.project_user_input = ""
+            clear_chat()
+            # If st.experimental_rerun() causes an error, keep it commented out:
+            # st.experimental_rerun()
 
 # -------------------------------
 # App Initialization & Main Flow
