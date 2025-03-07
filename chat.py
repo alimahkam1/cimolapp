@@ -94,12 +94,15 @@ def select_talent_from_pool(dynamic_response: str, talent_pool_df: pd.DataFrame)
     # Convert the talent pool dataframe to CSV text for context
     talent_pool_text = talent_pool_df.to_csv(index=False)
     prompt = (
-        "Berikut adalah respons dinamis yang berisi rekomendasi peran dan jumlah talent yang dibutuhkan dalam format JSON:\n"
+         "Berikut adalah respons dinamis yang berisi rekomendasi peran dan jumlah talent yang dibutuhkan dalam format JSON:\n"
         f"{dynamic_response}\n\n"
         "Berikut adalah data talent yang tersedia dalam format CSV:\n"
         f"{talent_pool_text}\n\n"
-        "Berdasarkan rekomendasi di atas, pilihlah talent yang sesuai dengan peran yang direkomendasikan dan jumlah yang dibutuhkan, yang memenuhi kondisi dimana assigment statusnya adalah No."
-        "Keluarkan hasilnya dalam format JSON. Pastikan jumlah talent yang dipilih jumlahnya sama dengan jumlah talent yang direkomendasikan pada dynamic_response, di mana setiap entry merupakan objek dengan kunci 'Nama', 'JOB ROLE USECASE', dan kunci relevan lainnya jika perlu."
+        "Berdasarkan rekomendasi di atas, pilihlah talent yang sesuai dengan peran yang direkomendasikan dan jumlah yang dibutuhkan. "
+        "Pastikan hanya memilih talent yang memiliki nilai 'No' pada kolom 'Already assigned or not'. "
+        "Jangan sertakan talent yang sudah ditugaskan (nilai 'Yes'). "
+        "Keluarkan hasilnya dalam format JSON, dengan jumlah talent yang dipilih sama dengan jumlah yang direkomendasikan pada dynamic_response. "
+        "Setiap entry harus berupa objek dengan kunci 'Nama', 'JOB ROLE USECASE', dan kunci relevan lainnya jika diperlukan."
     )
     completion = client.chat.completions.create(
         model="telkom-ai",
