@@ -263,7 +263,8 @@ def project_recommendation_mode():
             st.session_state.project_recommendation_done = False
             st.session_state.project_recommendation_result = {}
             st.session_state.project_user_input = ""
-            st.experimental_rerun()
+
+
             # Option B: Alternatively, you can simply clear the session state variables without forcing a rerun:
             # st.session_state.project_recommendation_done = False
             # st.session_state.project_recommendation_result = {}
