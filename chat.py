@@ -78,10 +78,12 @@ def generate_dynamic_response(user_input: str, context: str) -> str:
     prompt = (
         f"Berikut adalah informasi mengenai peran data dari dokumen:\n{context}\n\n"
         f"Pertanyaan pengguna: {user_input}\n"
-        "Berdasarkan informasi di atas, tolong rekomendasikan peran data yang tepat, "
-        "jumlah orang yang diperlukan, dan alasan singkat untuk rekomendasi tersebut. "
-        "Jawab pertanyaan di atas secara deskriptif dan sertakan ringkasan dalam format JSON seperti:\n"
-        '{ "recommended_role": "<role>", "talent_count": <number>, "description": "<brief description>" }\n'
+        "Berdasarkan informasi di atas, tolong berikan rekomendasi peran data yang tepat, jumlah orang yang diperlukan, "
+        "dan penjelasan singkat untuk rekomendasi tersebut. "
+        "Tuliskan jawaban dalam format teks biasa dengan struktur sebagai berikut:\n\n"
+        "Peran yang direkomendasikan: <peran>\n"
+        "Jumlah Talenta: <jumlah>\n"
+        "Deskripsi: <penjelasan singkat>\n"
     )
     completion = client.chat.completions.create(
         model="telkom-ai",
@@ -94,13 +96,14 @@ def select_talent_from_pool(dynamic_response: str, talent_pool_df: pd.DataFrame)
     # Convert the talent pool dataframe to CSV text for context
     talent_pool_text = talent_pool_df.to_csv(index=False)
     prompt = (
-        "Berikut adalah respons dinamis yang berisi rekomendasi peran dan jumlah talent yang dibutuhkan dalam format JSON:\n"
+        "Berikut adalah rekomendasi yang telah diberikan (dalam format teks biasa):\n"
         f"{dynamic_response}\n\n"
-        "Berikut adalah data talent yang tersedia dalam format CSV:\n"
+        "Berikut adalah data talenta yang tersedia (dalam format CSV):\n"
         f"{talent_pool_text}\n\n"
-        "Berdasarkan rekomendasi di atas, pilihlah talent yang sesuai dengan peran yang direkomendasikan dan jumlah yang dibutuhkan. "
-        "Keluarkan hasilnya dalam format JSON array, di mana setiap entry merupakan objek dengan kunci 'Nama', 'JOB ROLE USECASE', dan kunci relevan lainnya jika perlu."
-    )
+        "Berdasarkan rekomendasi di atas, pilihlah talenta yang sesuai dengan peran yang direkomendasikan "
+        "dan jumlah yang dibutuhkan. Tuliskan hasilnya dalam format teks biasa, dengan setiap talenta pada baris terpisah. "
+        "Sertakan informasi nama dan jabatan mereka."
+        )
     completion = client.chat.completions.create(
         model="telkom-ai",
         messages=[{"role": "user", "content": prompt}],
