@@ -3,10 +3,10 @@ import pandas as pd
 import PyPDF2
 import os
 import time
-import re
+import json
 from datetime import datetime
-import requests
-from openai import OpenAI
+import requests  # For sending webhook requests
+from openai import OpenAI  # Ensure you have the correct openai version installed
 
 # -------------------------------
 # Data & PDF Initialization 
@@ -52,37 +52,6 @@ def trigger_power_automate(payload: dict):
         return None
 
 # -------------------------------
-# Helper Function to Parse Talent Count
-# -------------------------------
-def parse_recommended_talent_count(dynamic_response: str):
-    """
-    Extracts the min and max talent count from a line like:
-    'Jumlah Talenta: 1-2' or 'Jumlah Talenta: 3'
-    Returns a tuple (min_count, max_count).
-    """
-    match = re.search(r"Jumlah\s*Talenta:\s*(.*)", dynamic_response)
-    if not match:
-        # Default to (1, 1) if not found
-        return (1, 1)
-    
-    count_str = match.group(1).strip()  # e.g. "1-2" or "3"
-    
-    if '-' in count_str:
-        parts = count_str.split('-')
-        try:
-            min_count = int(parts[0])
-            max_count = int(parts[1])
-        except ValueError:
-            return (1, 1)
-    else:
-        try:
-            min_count = max_count = int(count_str)
-        except ValueError:
-            return (1, 1)
-    
-    return (min_count, max_count)
-
-# -------------------------------
 # Chatbot Functions (Normal Mode)
 # -------------------------------
 def chatbot_response(user_input: str, chat_history: list) -> str:
@@ -109,12 +78,10 @@ def generate_dynamic_response(user_input: str, context: str) -> str:
     prompt = (
         f"Berikut adalah informasi mengenai peran data dari dokumen:\n{context}\n\n"
         f"Pertanyaan pengguna: {user_input}\n"
-        "Berdasarkan informasi di atas, tolong berikan rekomendasi peran data yang tepat, jumlah orang yang diperlukan, "
-        "dan penjelasan singkat untuk rekomendasi tersebut. "
-        "Tuliskan jawaban dalam format teks biasa dengan struktur sebagai berikut:\n\n"
-        "Peran yang direkomendasikan: <peran>\n"
-        "Jumlah Talenta: <jumlah>\n"
-        "Deskripsi: <penjelasan singkat>\n"
+        "Berdasarkan informasi di atas, tolong rekomendasikan peran data yang tepat, "
+        "jumlah orang yang diperlukan, dan alasan singkat untuk rekomendasi tersebut. "
+        "Jawab pertanyaan di atas secara deskriptif dan sertakan ringkasan dalam format JSON seperti:\n"
+        '{ "recommended_role": "<role>", "talent_count": <number>, "description": "<brief description>" }\n'
     )
     completion = client.chat.completions.create(
         model="telkom-ai",
@@ -124,43 +91,22 @@ def generate_dynamic_response(user_input: str, context: str) -> str:
     return completion.choices[0].message.content
 
 def select_talent_from_pool(dynamic_response: str, talent_pool_df: pd.DataFrame) -> str:
-    # 1) Parse the recommended min/max from the dynamic response
-    min_count, max_count = parse_recommended_talent_count(dynamic_response)
-    
-    # 2) Convert the talent pool to CSV text for context
+    # Convert the talent pool dataframe to CSV text for context
     talent_pool_text = talent_pool_df.to_csv(index=False)
-    
-    # 3) Prompt the LLM to select only min_count to max_count talents
     prompt = (
-        "Berikut adalah rekomendasi yang telah diberikan (dalam format teks biasa):\n"
+        "Berikut adalah respons dinamis yang berisi rekomendasi peran dan jumlah talent yang dibutuhkan dalam format JSON:\n"
         f"{dynamic_response}\n\n"
-        "Berikut adalah data talenta yang tersedia (dalam format CSV):\n"
+        "Berikut adalah data talent yang tersedia dalam format CSV:\n"
         f"{talent_pool_text}\n\n"
-        f"Berdasarkan rekomendasi di atas, pilihlah hanya antara {min_count} hingga {max_count} talenta "
-        "yang paling relevan dengan peran dan kebutuhan yang direkomendasikan. "
-        "Tulis hasilnya dalam format teks biasa, dengan setiap talenta pada baris terpisah, "
-        "menyertakan nama dan jabatan mereka."
+        "Berdasarkan rekomendasi di atas, pilihlah talent yang sesuai dengan peran yang direkomendasikan dan jumlah yang dibutuhkan. "
+        "Keluarkan hasilnya dalam format JSON array, di mana setiap entry merupakan objek dengan kunci 'Nama', 'JOB ROLE USECASE', dan kunci relevan lainnya jika perlu."
     )
-    
     completion = client.chat.completions.create(
         model="telkom-ai",
         messages=[{"role": "user", "content": prompt}],
         temperature=0
     )
-    
-    # 4) Post-process the LLM's response to ensure it doesn't exceed max_count lines
-    selected_text = completion.choices[0].message.content.strip()
-    lines = [l.strip() for l in selected_text.split('\n') if l.strip()]
-    
-    # If LLM returns more lines than max_count, truncate them
-    if len(lines) > max_count:
-        lines = lines[:max_count]
-    
-    # If LLM returns fewer lines than min_count, we keep them (can't magically create more).
-    # Optionally, you can handle that scenario differently.
-    
-    final_selection = '\n'.join(lines)
-    return final_selection
+    return completion.choices[0].message.content
 
 def log_recommendation(user_name: str, user_unit: str, user_email: str, user_input: str, 
                        dynamic_response: str, selected_talent: str) -> None:
@@ -228,13 +174,10 @@ def project_recommendation_mode():
                 unsafe_allow_html=True
             )
             time.sleep(0.5)
-
-        # 1) Generate the LLM-based recommendation (plain text)
+        # Generate dynamic response (JSON format) using the LLM API
         dynamic_response = generate_dynamic_response(user_input, pdf_text)
-        
-        # 2) Use the updated function that only picks the recommended min to max talents
+        # Use LLM to select the proper talent from the talent pool based on the dynamic response
         selected_talent = select_talent_from_pool(dynamic_response, talent_pool_df)
-        
         st.session_state.project_recommendation_result = {
             "dynamic_response": dynamic_response,
             "selected_talent": selected_talent
@@ -244,17 +187,35 @@ def project_recommendation_mode():
     
     if st.session_state.project_recommendation_done:
         st.subheader("🤖 Rekomendasi (LLM-enhanced):")
-        st.markdown("### Rekomendasi")
-        st.write(st.session_state.project_recommendation_result["dynamic_response"])
+        # Parse the dynamic JSON response for a user-friendly display
+        try:
+            dynamic_data = json.loads(st.session_state.project_recommendation_result["dynamic_response"])
+        except Exception as e:
+            dynamic_data = {}
+        if dynamic_data:
+            st.markdown("### Rekomendasi")
+            st.markdown(f"**Recommended Role:** {dynamic_data.get('recommended_role', 'N/A')}")
+            st.markdown(f"**Talent Count:** {dynamic_data.get('talent_count', 'N/A')}")
+            st.markdown(f"**Description:** {dynamic_data.get('description', 'N/A')}")
+        else:
+            st.write("Dynamic Response:", st.session_state.project_recommendation_result["dynamic_response"])
         
-        st.markdown("### Talenta Terpilih")
-        st.write(st.session_state.project_recommendation_result["selected_talent"])
+        # Parse and display the selected talent in a table if possible
+        try:
+            selected_talent_data = json.loads(st.session_state.project_recommendation_result["selected_talent"])
+        except Exception as e:
+            selected_talent_data = st.session_state.project_recommendation_result["selected_talent"]
+        st.markdown("### Selected Talent")
+        if isinstance(selected_talent_data, list):
+            talent_df = pd.DataFrame(selected_talent_data)
+            st.dataframe(talent_df)
+        else:
+            st.write("Selected Talent:", selected_talent_data)
         
         st.markdown("### 📋 Konfirmasi")
         st.write(
-            "Berdasarkan rangkuman di atas, kami telah memilih talenta dengan peran dan kemampuan yang sesuai "
-            "dengan kebutuhan proyek Anda.\n\nApakah Anda setuju dengan rekomendasi ini dan ingin meneruskan "
-            "permintaan ke manajemen?"
+            "Berdasarkan rangkuman di atas, kami telah memilih talent dengan role dan kemampuan yang sesuai dengan kebutuhan projek Anda.\n\n"
+            "Apakah Anda setuju dengan rekomendasi ini dan ingin meneruskan permintaan ke manajemen?"
         )
         if st.button("Setuju & Kirim ke Manajemen"):
             log_recommendation(
@@ -266,14 +227,11 @@ def project_recommendation_mode():
                 st.session_state.project_recommendation_result["selected_talent"]
             )
             
-            # Extract recommended role from the plain text recommendation using regex
-            role_match = re.search(
-                r"Peran yang direkomendasikan:\s*(.*)",
-                st.session_state.project_recommendation_result["dynamic_response"]
-            )
-            if role_match:
-                recommended_role = role_match.group(1).strip()
-            else:
+            # Prepare payload with expected fields for Power Automate
+            try:
+                dynamic_json = json.loads(st.session_state.project_recommendation_result["dynamic_response"])
+                recommended_role = dynamic_json.get("recommended_role", "Not Specified")
+            except Exception as e:
                 recommended_role = "Not Specified"
             
             payload = {
@@ -293,9 +251,6 @@ def project_recommendation_mode():
             else:
                 st.error("Gagal mengirim permintaan ke Power Automate. Silakan coba lagi.")
 
-# -------------------------------
-# Streamlit Page Configuration
-# -------------------------------
 st.set_page_config(
     page_title="Cimolbot",
     page_icon="🍡"
