@@ -269,18 +269,18 @@ st.set_page_config(
 
 def main():
     # Inject custom CSS for hover effect on all Streamlit buttons
-    st.markdown(
-        """
-        <style>
-        /* Change hover background and text color for all st.button elements */
-        div.stButton > button:hover {
-            background-color: #e6e6e6 !important; /* Light gray hover */
-            color: #000000 !important;            /* Black text on hover */
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+    # st.markdown(
+    #     """
+    #     <style>
+    #     /* Change hover background and text color for all st.button elements */
+    #     div.stButton > button:hover {
+    #         background-color: #e6e6e6 !important; /* Light gray hover */
+    #         color: #000000 !important;            /* Black text on hover */
+    #     }
+    #     </style>
+    #     """,
+    #     unsafe_allow_html=True
+    # )
 
     st.title("🤖 Data Role Cimolbot  🍡")
 
