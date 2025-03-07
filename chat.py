@@ -4,7 +4,7 @@ import PyPDF2
 import os
 import time
 from datetime import datetime
-import requests  # New: For sending webhook requests
+import requests  # For sending webhook requests
 from openai import OpenAI  # Ensure you have the correct openai version installed
 
 # -------------------------------
@@ -37,13 +37,11 @@ client = OpenAI(
 # Webhook Function to Trigger Power Automate
 # -------------------------------
 def trigger_power_automate(payload: dict):
-    # Retrieve the Power Automate webhook URL from Streamlit secrets
     webhook_url = "https://prod-59.southeastasia.logic.azure.com:443/workflows/600114214da148eea88c68bed87b2f46/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=oxPCcf0WivPxuIz_gcRUnj8qFEfTPHelRgEcCJzSd_w"
     if not webhook_url:
         st.error("Power Automate webhook URL not configured.")
         return None
     try:
-        # Added a timeout for the request and logging of response details for debugging.
         response = requests.post(webhook_url, json=payload, timeout=10)
         st.write("Response code:", response.status_code)
         st.write("Response body:", response.text)
@@ -79,10 +77,10 @@ def generate_dynamic_response(user_input: str, context: str) -> str:
     prompt = (
         f"Berikut adalah informasi mengenai peran data dari dokumen:\n{context}\n\n"
         f"Pertanyaan pengguna: {user_input}\n"
-        "Berdasarkan informasi di atas, tolong rekomendasikan peran data yang tepat, dan jumlah orang yang diperlukan. "
-        "Jawab pertanyaan diatas secara deskriptif. Setelah memberikan jawaban dengan format deskriptif, tulis kembali semua jawaban dalam bentuk rangkuman dengan format berikut:\n"
-        "(Bold) Talent yang dibutuhkan: (Posisi Role yang disanrankan serta jumlah orang dalam format: 'x' sejumlah 'y' orang), x adalah data role dan y adalah number \n\n"
-        "(Bold) Deskripsi: (Deskripsi pengalaman dan atau skill yang diharapkan dari talent unutk projek yang akan dilakukan)\n\n"
+        "Berdasarkan informasi di atas, tolong rekomendasikan peran data yang tepat, "
+        "jumlah orang yang diperlukan, dan alasan singkat untuk rekomendasi tersebut. "
+        "Jawab pertanyaan di atas secara deskriptif dan sertakan ringkasan dalam format JSON seperti:\n"
+        '{ "recommended_role": "<role>", "talent_count": <number>, "description": "<brief description>" }\n'
     )
     completion = client.chat.completions.create(
         model="telkom-ai",
@@ -91,49 +89,34 @@ def generate_dynamic_response(user_input: str, context: str) -> str:
     )
     return completion.choices[0].message.content
 
-def recommend_role(user_message: str) -> str:
-    user_message = user_message.lower()
-    if "dashboard" in user_message or "laporan" in user_message:
-        return "Data Analyst"
-    elif "machine learning" in user_message or "prediksi" in user_message:
-        return "Data Scientist"
-    elif "ai" in user_message or "otomatisasi" in user_message:
-        return "AI Engineer"
-    elif "etl" in user_message or "pipeline" in user_message:
-        return "Data Engineer"
-    else:
-        return "Talent yang sesuai belum ditemukan. Talent perlu dipilih secara manual"
-
-def match_talent(role: str):
-    matched_candidates = talent_pool_df[talent_pool_df["JOB ROLE USECASE"].str.upper() == role.upper()]
-    if not matched_candidates.empty:
-        return matched_candidates.head(3)[["Nama", "LeMiddleel", "JOB ROLE USECASE"]].to_dict(orient="records")
-    return "Talent yang sesuai belum ditemukan. Talent perlu dipilih secara manual"
-
-def extract_talent_from_response(response: str) -> str:
-    """
-    Extracts the talent names from the dynamic response.
-    Expected to find a line starting with "Talent yang disarankan:".
-    """
-    for line in response.splitlines():
-        if line.startswith("Talent yang disarankan:"):
-            return line.split(":", 1)[1].strip()
-    return ""
+def select_talent_from_pool(dynamic_response: str, talent_pool_df: pd.DataFrame) -> str:
+    # Convert the talent pool dataframe to CSV text for context
+    talent_pool_text = talent_pool_df.to_csv(index=False)
+    prompt = (
+        "Berikut adalah respons dinamis yang berisi rekomendasi peran dan jumlah talent yang dibutuhkan dalam format JSON:\n"
+        f"{dynamic_response}\n\n"
+        "Berikut adalah data talent yang tersedia dalam format CSV:\n"
+        f"{talent_pool_text}\n\n"
+        "Berdasarkan rekomendasi di atas, pilihlah talent yang sesuai dengan peran yang direkomendasikan dan jumlah yang dibutuhkan. "
+        "Keluarkan hasilnya dalam format JSON array, di mana setiap entry merupakan objek dengan kunci 'Nama', 'JOB ROLE USECASE', dan kunci relevan lainnya jika perlu."
+    )
+    completion = client.chat.completions.create(
+        model="telkom-ai",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0
+    )
+    return completion.choices[0].message.content
 
 def log_recommendation(user_name: str, user_unit: str, user_email: str, user_input: str, 
-                       recommended_role: str, recommended_talents: str, matched_talent_list) -> None:
-    if isinstance(matched_talent_list, list):
-        matched_talent_list = str(matched_talent_list)
-    
+                       dynamic_response: str, selected_talent: str) -> None:
     log_entry = {
         "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "Name": user_name,
         "Unit": user_unit,
         "Email": user_email,
         "User Input": user_input,
-        "Recommended Role": recommended_role,
-        "Recommended Talents": recommended_talents,
-        "Matched Talent List": matched_talent_list
+        "Dynamic Response": dynamic_response,
+        "Selected Talent": selected_talent
     }
     
     log_file = "recommendation_log.csv"
@@ -149,29 +132,19 @@ def log_recommendation(user_name: str, user_unit: str, user_email: str, user_inp
 # -------------------------------
 def chatbot_mode():
     st.subheader("Mode Chatbot (Pertanyaan Umum)")
-
-    # 1) Initialize chat history
     if 'chat_history' not in st.session_state:
         st.session_state.chat_history = []
 
-    # 2) Create a form so the user’s input is only submitted once per click
     with st.form("chat_form", clear_on_submit=True):
         user_input = st.text_input("Tulis pesan Anda:")
         submitted = st.form_submit_button("Kirim")
 
-    # 3) When the user submits, append the user message and generate a response
     if submitted and user_input.strip():
         with st.spinner("Memproses jawaban..."):
-            # Append user message
-            st.session_state.chat_history.append(
-                {"role": "user", "content": user_input.strip()}
-            )
-            # Get the bot’s response
+            st.session_state.chat_history.append({"role": "user", "content": user_input.strip()})
             response = chatbot_response(user_input.strip(), st.session_state.chat_history)
-            # Append bot response
             st.session_state.chat_history.append({"role": "bot", "content": response})
 
-    # 4) Display the entire chat history once at the end
     for msg in st.session_state.chat_history:
         if msg["role"] == "user":
             st.markdown(f"**User:** {msg['content']}")
@@ -200,72 +173,59 @@ def project_recommendation_mode():
                 unsafe_allow_html=True
             )
             time.sleep(0.5)
-        recommended_role = recommend_role(user_input)
-        matched_candidates = match_talent(recommended_role)
+        # Generate dynamic response (JSON format) using the LLM API
         dynamic_response = generate_dynamic_response(user_input, pdf_text)
-        recommended_talents = extract_talent_from_response(dynamic_response)
+        # Use LLM to select the proper talent from the talent pool based on the dynamic response
+        selected_talent = select_talent_from_pool(dynamic_response, talent_pool_df)
         st.session_state.project_recommendation_result = {
-            "recommended_role": recommended_role,
-            "matched_candidates": matched_candidates,
             "dynamic_response": dynamic_response,
-            "recommended_talents": recommended_talents,
+            "selected_talent": selected_talent
         }
         st.session_state.project_recommendation_done = True
         loading_placeholder.empty()
     
     if st.session_state.project_recommendation_done:
         st.subheader("🤖 Rekomendasi (LLM-enhanced):")
-        st.write(st.session_state.project_recommendation_result["dynamic_response"])
+        st.write("Dynamic Response:", st.session_state.project_recommendation_result["dynamic_response"])
+        st.write("Selected Talent:", st.session_state.project_recommendation_result["selected_talent"])
         st.markdown("### 📋 Konfirmasi")
         st.write(
             "Berdasarkan rangkuman di atas, kami telah memilih talent dengan role dan kemampuan yang sesuai dengan kebutuhan projek Anda.\n\n"
             "Apakah Anda setuju dengan rekomendasi ini dan ingin meneruskan permintaan ke manajemen?"
         )
         if st.button("Setuju & Kirim ke Manajemen"):
-            # Log the recommendation locally
             log_recommendation(
                 st.session_state.user_name,
                 st.session_state.user_unit,
                 st.session_state.user_email,
                 st.session_state.project_user_input,
-                st.session_state.project_recommendation_result["recommended_role"],
-                st.session_state.project_recommendation_result["recommended_talents"],
-                st.session_state.project_recommendation_result["matched_candidates"]
+                st.session_state.project_recommendation_result["dynamic_response"],
+                st.session_state.project_recommendation_result["selected_talent"]
             )
             
-            # Prepare payload for Power Automate webhook
             payload = {
                 "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "Name": st.session_state.user_name,
                 "Unit": st.session_state.user_unit,
                 "Email": st.session_state.user_email,
                 "User Input": st.session_state.project_user_input,
-                "Recommended Role": st.session_state.project_recommendation_result["recommended_role"],
-                "Recommended Talents": st.session_state.project_recommendation_result["recommended_talents"],
-                "Matched Talent List": st.session_state.project_recommendation_result["matched_candidates"]
+                "Dynamic Response": st.session_state.project_recommendation_result["dynamic_response"],
+                "Selected Talent": st.session_state.project_recommendation_result["selected_talent"]
             }
-
-            
-            # Trigger Power Automate via webhook
             response = trigger_power_automate(payload)
-            if response and response.status_code == 200:
+            if response and response.status_code in [200, 202]:
                 st.success("Permintaan telah dikirim ke manajemen dan dicatat!")
             else:
                 st.error("Gagal mengirim permintaan ke Power Automate. Silakan coba lagi.")
 
-            
-# Set your page title and icon
 st.set_page_config(
-    page_title="Cimolbot",  # Replace with your desired title
-    page_icon="🍡"         # You can use an emoji or a path to an image file
+    page_title="Cimolbot",
+    page_icon="🍡"
 )
 
 def main():
     st.title("🤖 Data Role Cimolbot  🍡 🍡 ")
 
-    # -------------------------------
-    # Sidebar: User Information & Mode Selection
-    # -------------------------------
     st.sidebar.markdown("### Informasi Diri")
     user_name = st.sidebar.text_input("Nama:")
     user_unit = st.sidebar.selectbox("Unit:", [
