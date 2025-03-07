@@ -157,6 +157,7 @@ def chatbot_mode():
 def project_recommendation_mode():
     st.subheader("Mode Rekomendasi Proyek")
     
+    # Ensure session state variables are initialized
     if "project_recommendation_done" not in st.session_state:
         st.session_state.project_recommendation_done = False
     if "project_recommendation_result" not in st.session_state:
@@ -166,7 +167,7 @@ def project_recommendation_mode():
 
     user_input = st.text_input("Apa kebutuhan data proyek Anda?", key="proj_input")
     
-    # 1) If user enters new prompt and no recommendation done yet, generate a new recommendation
+    # 1) Generate recommendation if a new prompt is entered
     if user_input and not st.session_state.project_recommendation_done:
         st.session_state.project_user_input = user_input
         loading_placeholder = st.empty()
@@ -178,9 +179,9 @@ def project_recommendation_mode():
                 unsafe_allow_html=True
             )
             time.sleep(0.5)
-        # Generate dynamic response (JSON format) using the LLM API
+        # Generate dynamic response (JSON format)
         dynamic_response = generate_dynamic_response(user_input, pdf_text)
-        # Use LLM to select the proper talent from the talent pool based on the dynamic response
+        # Select proper talent from the talent pool
         selected_talent = select_talent_from_pool(dynamic_response, talent_pool_df)
         st.session_state.project_recommendation_result = {
             "dynamic_response": dynamic_response,
@@ -189,10 +190,9 @@ def project_recommendation_mode():
         st.session_state.project_recommendation_done = True
         loading_placeholder.empty()
     
-    # 2) If a recommendation is already done, display it
+    # 2) If a recommendation has been generated, display it
     if st.session_state.project_recommendation_done:
         st.subheader("🤖 Rekomendasi (LLM-enhanced):")
-        # Parse the dynamic JSON response for a user-friendly display
         try:
             dynamic_data = json.loads(st.session_state.project_recommendation_result["dynamic_response"])
         except Exception as e:
@@ -205,7 +205,6 @@ def project_recommendation_mode():
         else:
             st.write("Dynamic Response:", st.session_state.project_recommendation_result["dynamic_response"])
         
-        # Parse and display the selected talent in a table if possible
         try:
             selected_talent_data = json.loads(st.session_state.project_recommendation_result["selected_talent"])
         except Exception as e:
@@ -235,7 +234,6 @@ def project_recommendation_mode():
                 st.session_state.project_recommendation_result["selected_talent"]
             )
             
-            # Prepare payload with expected fields for Power Automate
             try:
                 dynamic_json = json.loads(st.session_state.project_recommendation_result["dynamic_response"])
                 recommended_role = dynamic_json.get("recommended_role", "Not Specified")
@@ -259,33 +257,27 @@ def project_recommendation_mode():
             else:
                 st.error("Gagal mengirim permintaan ke Power Automate. Silakan coba lagi.")
 
-        # "Clear Chat" button directly below
+        # Updated "Clear Chat" button functionality:
         if st.button("Clear Chat"):
+            # Option A: Clear the session state variables and force a rerun
             st.session_state.project_recommendation_done = False
             st.session_state.project_recommendation_result = {}
             st.session_state.project_user_input = ""
             st.experimental_rerun()
+            # Option B: Alternatively, you can simply clear the session state variables without forcing a rerun:
+            # st.session_state.project_recommendation_done = False
+            # st.session_state.project_recommendation_result = {}
+            # st.session_state.project_user_input = ""
 
+# -------------------------------
+# App Initialization & Main Flow
+# -------------------------------
 st.set_page_config(
     page_title="Cimolbot",
     page_icon="🍡"
 )
 
 def main():
-    # Inject custom CSS for hover effect on all Streamlit buttons
-    # st.markdown(
-    #     """
-    #     <style>
-    #     /* Change hover background and text color for all st.button elements */
-    #     div.stButton > button:hover {
-    #         background-color: #e6e6e6 !important; /* Light gray hover */
-    #         color: #000000 !important;            /* Black text on hover */
-    #     }
-    #     </style>
-    #     """,
-    #     unsafe_allow_html=True
-    # )
-
     st.title("🤖 Data Role Cimolbot  🍡 🍡 ")
 
     st.sidebar.markdown("### Informasi Diri")
