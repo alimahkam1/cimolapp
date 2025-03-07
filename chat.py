@@ -3,6 +3,7 @@ import pandas as pd
 import PyPDF2
 import os
 import time
+import json
 from datetime import datetime
 import requests  # For sending webhook requests
 from openai import OpenAI  # Ensure you have the correct openai version installed
@@ -186,8 +187,31 @@ def project_recommendation_mode():
     
     if st.session_state.project_recommendation_done:
         st.subheader("🤖 Rekomendasi (LLM-enhanced):")
-        st.write("Dynamic Response:", st.session_state.project_recommendation_result["dynamic_response"])
-        st.write("Selected Talent:", st.session_state.project_recommendation_result["selected_talent"])
+        # Parse the dynamic JSON response for a user-friendly display
+        try:
+            dynamic_data = json.loads(st.session_state.project_recommendation_result["dynamic_response"])
+        except Exception as e:
+            dynamic_data = {}
+        if dynamic_data:
+            st.markdown("### Rekomendasi")
+            st.markdown(f"**Recommended Role:** {dynamic_data.get('recommended_role', 'N/A')}")
+            st.markdown(f"**Talent Count:** {dynamic_data.get('talent_count', 'N/A')}")
+            st.markdown(f"**Description:** {dynamic_data.get('description', 'N/A')}")
+        else:
+            st.write("Dynamic Response:", st.session_state.project_recommendation_result["dynamic_response"])
+        
+        # Parse and display the selected talent in a table if possible
+        try:
+            selected_talent_data = json.loads(st.session_state.project_recommendation_result["selected_talent"])
+        except Exception as e:
+            selected_talent_data = st.session_state.project_recommendation_result["selected_talent"]
+        st.markdown("### Selected Talent")
+        if isinstance(selected_talent_data, list):
+            talent_df = pd.DataFrame(selected_talent_data)
+            st.dataframe(talent_df)
+        else:
+            st.write("Selected Talent:", selected_talent_data)
+        
         st.markdown("### 📋 Konfirmasi")
         st.write(
             "Berdasarkan rangkuman di atas, kami telah memilih talent dengan role dan kemampuan yang sesuai dengan kebutuhan projek Anda.\n\n"
@@ -203,12 +227,21 @@ def project_recommendation_mode():
                 st.session_state.project_recommendation_result["selected_talent"]
             )
             
+            # Prepare payload with expected fields for Power Automate
+            try:
+                dynamic_json = json.loads(st.session_state.project_recommendation_result["dynamic_response"])
+                recommended_role = dynamic_json.get("recommended_role", "Not Specified")
+            except Exception as e:
+                recommended_role = "Not Specified"
+            
             payload = {
                 "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "Name": st.session_state.user_name,
                 "Unit": st.session_state.user_unit,
                 "Email": st.session_state.user_email,
                 "User Input": st.session_state.project_user_input,
+                "Recommended Role": recommended_role,
+                "Recommended Talents": st.session_state.project_recommendation_result["selected_talent"],
                 "Dynamic Response": st.session_state.project_recommendation_result["dynamic_response"],
                 "Selected Talent": st.session_state.project_recommendation_result["selected_talent"]
             }
