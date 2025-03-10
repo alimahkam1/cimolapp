@@ -7,7 +7,7 @@ import json
 from datetime import datetime
 import requests
 from openai import OpenAI
-from fpdf import FPDF 
+from fpdf import FPDF  # Ensure fpdf is installed: pip install fpdf
 
 # -------------------------------
 # Data & PDF Initialization
@@ -133,6 +133,42 @@ def log_recommendation(user_name: str, user_unit: str, user_email: str, user_inp
     log_df.to_csv(log_file, index=False)
 
 # -------------------------------
+# Integrated Official Document Generation Function
+# -------------------------------
+def generate_official_document_integration(user_input: str, dynamic_response: str, selected_talent: str, template_text: str) -> (str, str):
+    """
+    Generates an official talent request document using the provided template, project details, and recommendation.
+    Returns a tuple of (pdf_filename, document_text).
+    """
+    prompt = (
+        f"Gunakan template berikut sebagai dasar untuk membuat draft dokumen resmi permohonan kebutuhan talent:\n\n"
+        f"{template_text}\n\n"
+        f"Berdasarkan informasi dan rekomendasi proyek berikut:\n"
+        f"User Input: {user_input}\n"
+        f"Rekomendasi (Dynamic Response): {dynamic_response}\n"
+        f"Selected Talent: {selected_talent}\n\n"
+        "Buatlah draft dokumen permohonan kebutuhan talent dengan bahasa formal, mengacu pada format dan gaya di template."
+    )
+    completion = client.chat.completions.create(
+        model="telkom-ai",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0
+    )
+    document_text = completion.choices[0].message.content
+
+    # Create a PDF from the generated document text using FPDF
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font("Arial", size=12)
+    for line in document_text.split('\n'):
+        pdf.multi_cell(0, 10, line)
+    pdf_filename = f"Official_Document_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    pdf.output(pdf_filename)
+    
+    return pdf_filename, document_text
+
+# -------------------------------
 # Streamlit UI: Flow Selection & Interfaces
 # -------------------------------
 def chatbot_mode():
@@ -224,7 +260,7 @@ def project_recommendation_mode():
             "Apakah Anda setuju dengan rekomendasi ini dan ingin meneruskan permintaan ke manajemen?"
         )
 
-        # "Setuju & Kirim ke Manajemen" button
+        # "Setuju & Kirim ke Manajemen" button (integrated with official document generation)
         if st.button("Setuju & Kirim ke Manajemen"):
             log_recommendation(
                 st.session_state.user_name,
@@ -255,6 +291,19 @@ def project_recommendation_mode():
             response = trigger_power_automate(payload)
             if response and response.status_code in [200, 202]:
                 st.success("Permintaan telah dikirim ke manajemen dan dicatat!")
+                
+                # Generate the official document draft and PDF
+                with st.spinner("Membuat draft dokumen resmi..."):
+                    pdf_filename, doc_text = generate_official_document_integration(
+                        st.session_state.project_user_input,
+                        st.session_state.project_recommendation_result["dynamic_response"],
+                        st.session_state.project_recommendation_result["selected_talent"],
+                        pdf_text  # Using the extracted template as guidance
+                    )
+                st.markdown("### Preview Dokumen Resmi")
+                st.text(doc_text)
+                with open(pdf_filename, "rb") as pdf_file:
+                    st.download_button("Download PDF Dokumen Resmi", pdf_file.read(), file_name=pdf_filename, mime="application/pdf")
             else:
                 st.error("Gagal mengirim permintaan ke Power Automate. Silakan coba lagi.")
 
@@ -286,6 +335,7 @@ def main():
     st.session_state.user_unit = user_unit
     st.session_state.user_email = user_email
 
+    # Mode selection now only shows Chatbot and Rekomendasi Proyek
     mode = st.sidebar.radio("Pilih Alur:", ("Chatbot", "Rekomendasi Proyek"))
     
     if mode == "Chatbot":
