@@ -311,12 +311,12 @@ def project_recommendation_mode():
 # App Initialization & Main Flow
 # -------------------------------
 st.set_page_config(
-    page_title="Cimolbot",
+    page_title="🤖 Cimolbot 🍡",
     page_icon="🍡"
 )
 
 def main():
-    st.title("🤖 Data Role Cimolbot  🍡 🍡 ")
+    st.title("🤖 Data Role Cimolbot  🍡 🍡 🍡 ")
 
     st.sidebar.markdown("### Informasi Diri")
     user_name = st.sidebar.text_input("Nama:")
