@@ -7,6 +7,7 @@ import json
 from datetime import datetime
 import requests
 from openai import OpenAI
+from fpdf import FPDF 
 
 # -------------------------------
 # Data & PDF Initialization
