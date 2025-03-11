@@ -4,3 +4,4 @@ pandas
 openpyxl
 openAI
 fpdf
+docxtpl
