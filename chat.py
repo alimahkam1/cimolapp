@@ -1,5 +1,3 @@
-#WITHOUT WHATSAPP WHEN THE DAILY LIMIT HAS BEEN REACHED
-
 import streamlit as st
 import pandas as pd
 import PyPDF2
