@@ -305,15 +305,15 @@ def project_recommendation_mode():
         st.markdown("""
                 Berikut beberapa contoh prompt yang dapat membantu Anda memulai:
 
-                - "Saya sedang mengerjakan proyek analisis pasar dan membutuhkan data analyst yang handal untuk menganalisa tren penjualan serta statistik."
+                - "Saya sedang mengerjakan proyek analisis pasar dan membutuhkan talent data yang sesuai serta handal untuk menganalisa tren penjualan serta statistik."
 
                 - "Proyek saya adalah pengembangan sistem rekomendasi untuk e-commerce. Saya membutuhkan spesialis machine learning dengan pengalaman di deep learning dan data mining."
 
-                - "Dalam proyek optimasi supply chain, saya memerlukan data engineer yang berpengalaman dalam ETL dan pengelolaan data besar."
+                - "Dalam proyek optimasi supply chain, saya memerlukan talent data yang berpengalaman dalam ETL dan pengelolaan data besar."
 
-                - "Untuk mendukung proyek riset tren konsumen, saya mencari data scientist yang ahli dalam analisis big data dan visualisasi data."
+                - "Untuk mendukung proyek riset tren konsumen, saya mencari talent data yang ahli dalam analisis big data dan visualisasi data."
 
-                - "Proyek saya berkaitan dengan prediksi penjualan menggunakan algoritma forecasting. Apakah ada analis data dengan pengalaman serupa?"
+                - "Proyek saya berkaitan dengan prediksi penjualan menggunakan algoritma forecasting. Talent data seperti apa yang saya butuhkan?"
                     """)
 
     if "project_recommendation_done" not in st.session_state:
