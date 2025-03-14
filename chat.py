@@ -295,7 +295,7 @@ def chatbot_response(user_input: str, chat_history: list) -> str:
 def project_recommendation_mode():
     st.subheader("Mode Rekomendasi Talent")
     with st.expander("Panduan"):
-        #st.snow()
+        st.snow()
         st.write("Selamat datang di Mode Rekomendasi Data Talent!\n\n"
                 "Chatbot ini dirancang untuk membantu setiap unit menemukan ahli data yang tepat sesuai dengan kebutuhan proyek Anda. "
                 "Cukup deskripsikan jenis proyek yang akan Anda kerjakan serta harapan Anda terhadap peran talenta yang diinginkan, "
