@@ -16,7 +16,7 @@ from docxtpl import DocxTemplate
 # -------------------------------
 # Inisialisasi Data & PDF
 # -------------------------------
-flow_url = "https://prod-31.southeastasia.logic.azure.com:443/workflows/9aab47d509544fe1a846f947af3b8580/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=-vUSeDSLQY00EA57lHwqlfVkzLQtDleIbXz4YaEX3cI"
+flow_url = st.secrets["http"]["flow_url"]
 todays_date = datetime.now().strftime("%Y-%m-%d_%H_%M_%S")
 
 try:
@@ -42,9 +42,9 @@ try:
 except requests.RequestException as e:
     st.error(f"Terjadi kesalahan saat mengambil data: {e}")
 
-flow_url2 = "https://prod-51.southeastasia.logic.azure.com:443/workflows/95844ecd091c48e3a96421f3b94c533a/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=eL8aW2Tw-g2EY1DCm48BkS20ndKCi_3fF69kL02R6Lc"
+flow_url2 = st.secrets["http"]["flow_url2"]
 response2 = requests.post(flow_url2)
-flow_url3 = "https://prod-84.southeastasia.logic.azure.com:443/workflows/58d3a562a2b74100ad2471980a6dd83b/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=CUZ-XRmAL_ycr9jElfal2cN6TlFHvphDdowY_I56Vcg"
+flow_url3 = st.secrets["http"]["flow_url3"]
 
 if response2.status_code == 200:
     data = response2.json()
@@ -96,36 +96,33 @@ def sending_docs(the_docs, sender_unit):
 # Inisialisasi API LLM
 # -------------------------------
 client = OpenAI(
-    api_key="randomkey",  # Ganti dengan API key Anda
-    base_url="https://telkom-ai-dag-api.apilogy.id/Telkom-LLM/0.0.4/llm",
-    default_headers={"x-api-key": "88JWNTBHM4OXBusCLZuBYGUGBBrTE2iD"}  # Ganti dengan API key Anda
+    api_key=st.secrets["openai"]["api_key"],  
+    base_url=st.secrets["openai"]["base_url"],
+    default_headers={"x-api-key": st.secrets["openai"]["header"]}  
 )
 
-# -------------------------------
-# Fungsi Notifikasi WhatsApp via Twilio
-# -------------------------------
-# def send_whatsapp_notification(sender_name: str, sender_unit: str, user_input: str):
-#     account_sid = 'AC69aca05267b8ed556fa1a3b1246e8015'  # Twilio SID Anda
-#     auth_token = 'e71a0afb57302d8889a12fc144921727'       # Twilio Auth Token Anda
-#     client_twilio = Client(account_sid, auth_token)
+def send_whatsapp_notification(sender_name: str, sender_unit: str, user_input: str):
+    account_sid = st.secrets["twilio"]["account_sid"]
+    auth_token = st.secrets["twilio"]["auth_token"]
+    client_twilio = Client(account_sid, auth_token)
 
-#     message = client_twilio.messages.create(
-#         from_='whatsapp:+14155238886',  # Nomor sandbox Twilio
-#         body=(
-#             f"Permintaan Talenta baru telah dikirim pada {todays_date}!\n\n"
-#             f"Permintaan ini dikirim oleh {sender_name} dari {sender_unit}.\n\n"
-#             f"Berikut kebutuhannya: \n\n {user_input} \n\n"
-#             "Periksa email serta channel teams Anda untuk informasi selengkapnya."
-#         ),
-#         to='whatsapp:+6282190566305'
-#     )
-#     print(message.sid)
+    message = client_twilio.messages.create(
+        from_= st.secrets["twilio"]["from_"],  # Nomor sandbox Twilio
+        body=(
+            f"Permintaan Talenta baru telah dikirim pada {todays_date}!\n\n"
+            f"Permintaan ini dikirim oleh {sender_name} dari {sender_unit}.\n\n"
+            f"Berikut kebutuhannya: \n\n {user_input} \n\n"
+            "Periksa email serta channel teams Anda untuk informasi selengkapnya."
+        ),
+        to=st.secrets["twilio"]["to"]
+    )
+    print(message.sid)
 
 # -------------------------------
 # Fungsi Webhook untuk Memicu Power Automate
 # -------------------------------
 def trigger_power_automate(payload: dict):
-    webhook_url = "https://prod-59.southeastasia.logic.azure.com:443/workflows/600114214da148eea88c68bed87b2f46/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=oxPCcf0WivPxuIz_gcRUnj8qFEfTPHelRgEcCJzSd_w"
+    webhook_url = st.secrets["http"]["webhook_url"]
     if not webhook_url:
         st.error("URL webhook Power Automate tidak dikonfigurasi.")
         return None
