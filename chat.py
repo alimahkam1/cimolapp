@@ -246,7 +246,7 @@ def generate_official_document_integration(placeholder1: str, placeholder2: str,
 def chatbot_mode():
     st.subheader("Mode Chatbot (Pertanyaan Umum Terkait Data Role)")
     with st.expander("Panduan"):
-        st.balloons()
+        #st.balloons()
         st.write("Selamat datang di Mode Pertanyaan Umum! \n\n"
             "Chatbot ini dirancang untuk membantu setiap unit yang membutuhkan talent data dari chapter DSC. Di sini, Anda dapat mengajukan pertanyaan mengenai berbagai role data—mulai dari ruang lingkup, tanggung jawab, hingga kemampuan masing-masing—sehingga Anda dapat memahami dengan jelas bagaimana setiap peran dapat mendukung kebutuhan proyek Anda. Setelah Anda mengenal peran-peran yang tersedia, Anda dapat beralih ke Chatbot Rekomendasi Talent kami untuk mendapatkan saran yang dipersonalisasi tentang role data ideal yang sesuai dengan proyek spesifik Anda. \n\n \n\n Tapi, jangan khawatir! Anda juga tetap bisa menanyakan pertanyaan yang tidak berhubungan dengan Data ke chatbot ini 😉")
     
