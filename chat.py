@@ -297,7 +297,7 @@ def project_recommendation_mode():
     with st.expander("Panduan"):
         st.snow()
         st.write("Selamat datang di Mode Rekomendasi Data Talent!\n\n"
-                "Chatbot ini dirancang untuk membantu setiap unit menemukan ahli data yang tepat sesuai dengan kebutuhan proyek Anda. "
+                "Menu ini dirancang untuk membantu setiap unit menemukan ahli data yang tepat sesuai dengan kebutuhan proyek Anda. "
                 "Cukup deskripsikan jenis proyek yang akan Anda kerjakan serta harapan Anda terhadap peran talenta yang diinginkan, "
                 "dan sistem kami akan memberikan rekomendasi yang dipersonalisasi berdasarkan kriteria tersebut. "
                 "Apakah Anda mencari data analyst, data engineer, atau spesialis machine learning, kami siap membantu Anda menemukan kandidat yang paling sesuai! \n\n \n\n"
@@ -309,7 +309,7 @@ def project_recommendation_mode():
 
                 - "Proyek saya adalah pengembangan sistem rekomendasi untuk e-commerce. Saya membutuhkan spesialis machine learning dengan pengalaman di deep learning dan data mining."
 
-                - "Dalam proyek optimasi supply chain, saya memerlukan talent data yang berpengalaman dalam ETL dan pengelolaan data besar."
+                - "Dalam proyek optimasi supply chain, saya memerlukan talent data yang berpengalaman dalam ETL dan pengelolaan data dalam skala BESAR."
 
                 - "Untuk mendukung proyek riset tren konsumen, saya mencari talent data yang ahli dalam analisis big data dan visualisasi data."
 
