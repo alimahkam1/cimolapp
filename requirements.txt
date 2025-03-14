@@ -5,3 +5,4 @@ openpyxl
 openAI
 fpdf
 docxtpl
+twilio
