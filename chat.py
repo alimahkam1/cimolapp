@@ -313,7 +313,7 @@ def project_recommendation_mode():
 
                 - "Untuk mendukung proyek riset tren konsumen, saya mencari talent data yang ahli dalam analisis big data dan visualisasi data."
 
-                - "Proyek saya berkaitan dengan prediksi penjualan menggunakan algoritma forecasting. Talent data seperti apa yang saya butuhkan?"
+                - "Proyek saya berkaitan dengan prediksi penjualan menggunakan algoritma forecasting."
                     """)
 
     if "project_recommendation_done" not in st.session_state:
