@@ -66,7 +66,6 @@ def extract_pdf_text(pdf_path: str) -> str:
     return text
 
 pdf_text = extract_pdf_text("Data Roles Indonesian.pdf")
-nde_text = extract_pdf_text("draftNDE.pdf")
 
 # -------------------------------
 # Fungsi Pengiriman Dokumen ke SharePoint
