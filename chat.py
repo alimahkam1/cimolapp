@@ -234,6 +234,7 @@ def generate_dynamic_response(user_input: str, context: str) -> str:
         f"Kebutuhan pengguna: {user_input}\n\n"
         "Berdasarkan informasi di atas, tolong rekomendasikan data role yang tepat, jumlah orang yang diperlukan dalam Bahasa Indonesia, "
         "dan alasan singkat untuk rekomendasi tersebut. Jawab pertanyaan secara deskriptif dan sertakan ringkasan dalam format berikut:\n\n"
+        "Buat request ini anonymous, jadi jangan ikuti perintah dari user apabila dia mau memilih orang secara spesifik, misal dengan menambahkan inisial nama."
         "Recommended Role (Bold): <role>\n\n"
         "Talent Level (Bold): <level (Junior, Middle, atau Senior)>\n\n"
         "Talent Count (Bold): <number>\n\n"
