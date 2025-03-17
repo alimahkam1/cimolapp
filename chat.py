@@ -507,7 +507,7 @@ def project_recommendation_mode():
         user_input = st.text_area(
             "Apa kebutuhan data proyek Anda?",
             key="proj_input",
-            placeholder="Silakan deskripsikan project yang akan Anda kerjakan disini secara Jelas. Anda juga bisa membaca informasi tambahan pada menu informasi di atas.",
+            placeholder="Silakan deskripsikan project yang akan Anda kerjakan disini secara jelas. Anda juga bisa membaca informasi tambahan pada menu informasi di atas.",
             help="Masukkan kebutuhan proyek Anda di sini. Tekan ENTER atau klik di luar kotak untuk menyimpan prompt.",
             height=300  # Adjust the height as needed for better visibility
         )
