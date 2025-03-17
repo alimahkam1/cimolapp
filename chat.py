@@ -674,6 +674,10 @@ custom_css = """
         color: #1F2C2F;
     }
 
+.st-emotion-cache-165fv6u p {
+        color: #1F2C2F;
+    }
+
 </style>
 """
 
@@ -733,6 +737,7 @@ def main():
     font-family: "Source Sans Pro", sans-serif;
     font-size: 0.8rem;
     }
+
 
     """,
     unsafe_allow_html=True
