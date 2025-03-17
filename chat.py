@@ -242,6 +242,7 @@ def generate_dynamic_response(user_input: str, context: str) -> str:
         "- <bullet point 1>\n"
         "- <bullet point 2>\n"
         "- ...\n"
+        "Ensure the selction is strict, so when the prompt is not directly related to data role, ensure that it won't recommend any data role. For example, if the user wants to create website, they should hire developer instead of data role. In this type of condition, do not recommend any data role"
         "Jika prompt tidak jelas atau kurang konteks, minta pengguna memasukkan ulang prompt dengan informasi yang lebih lengkap."
     )
 
