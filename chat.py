@@ -676,6 +676,10 @@ custom_css = """
         color: #1F2C2F;
     }
 
+.st-emotion-cache-1lkozj7 .stTooltipHoverTarget > svg {
+        color: #1F2C2F;
+    }
+
 </style>
 """
 
