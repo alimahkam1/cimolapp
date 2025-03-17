@@ -324,7 +324,7 @@ def select_talent_from_pool(dynamic_response: str, talent_pool_df: pd.DataFrame,
         )
         response_text = completion.choices[0].message.content
         talent_info = extract_selected_talent_info(response_text)
-        st.write(talent_info)
+        #st.write(talent_info)
     except Exception as e:
         st.error("Terjadi kesalahan saat menghubungi API LLM.")
         st.error(str(e))
@@ -390,9 +390,6 @@ def none_mode():
 # -------------------------------
 # Fungsi Mode Chatbot
 # -------------------------------
-
-import streamlit as st
-
 def chatbot_mode():
     # Initialize session state variables if not already set
     if 'has_submitted' not in st.session_state:
