@@ -504,12 +504,14 @@ def project_recommendation_mode():
                 """
             )
 
-        user_input = st.text_input(
+        user_input = st.text_area(
             "Apa kebutuhan data proyek Anda?",
             key="proj_input",
             placeholder="Silakan baca informasi di atas terlebih dahulu",
-            help="Tekan ENTER untuk menyimpan prompt lalu klik tombol Buatkan Saya Rekomendasi"
+            help="Masukkan kebutuhan proyek Anda di sini. Tekan ENTER atau klik di luar kotak untuk menyimpan prompt.",
+            height=300  # Adjust the height as needed for better visibility
         )
+        
         is_input_empty = user_input.strip() == ""
 
         if st.button("Buatkan Saya Rekomendasi", disabled=is_input_empty):
