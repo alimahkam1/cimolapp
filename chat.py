@@ -104,22 +104,22 @@ client = OpenAI(
 # -------------------------------
 # Fungsi Notifikasi WhatsApp via Twilio
 # -------------------------------
-# def send_whatsapp_notification(sender_name: str, sender_unit: str, user_input: str):
-#     account_sid = st.secrets["twilio"]["account_sid"]
-#     auth_token = st.secrets["twilio"]["auth_token"]
-#     client_twilio = Client(account_sid, auth_token)
+def send_whatsapp_notification(sender_name: str, sender_unit: str, user_input: str):
+    account_sid = st.secrets["twilio"]["account_sid"]
+    auth_token = st.secrets["twilio"]["auth_token"]
+    client_twilio = Client(account_sid, auth_token)
 
-#     message = client_twilio.messages.create(
-#         from_=st.secrets["twilio"]["from_"],
-#         body=(
-#             f"Permintaan Talenta baru telah dikirim pada {todays_date}!\n\n"
-#             f"Permintaan ini dikirim oleh {sender_name} dari {sender_unit}.\n\n"
-#             f"Berikut kebutuhannya: \n\n {user_input} \n\n"
-#             "Periksa email serta channel teams Anda untuk informasi selengkapnya."
-#         ),
-#         to=st.secrets["twilio"]["to"]
-#     )
-#     print(message.sid)
+    message = client_twilio.messages.create(
+        from_=st.secrets["twilio"]["from_"],
+        body=(
+            f"Permintaan Talenta baru telah dikirim pada {todays_date}!\n\n"
+            f"Permintaan ini dikirim oleh {sender_name} dari {sender_unit}.\n\n"
+            f"Berikut kebutuhannya: \n\n {user_input} \n\n"
+            "Periksa email serta channel teams Anda untuk informasi selengkapnya."
+        ),
+        to=st.secrets["twilio"]["to"]
+    )
+    print(message.sid)
 
 # -------------------------------
 # Fungsi Webhook untuk Memicu Power Automate
@@ -233,8 +233,8 @@ def generate_dynamic_response(user_input: str, context: str) -> str:
         f"Berikut adalah informasi mengenai data role dari dokumen:\n{context}\n\n"
         f"Kebutuhan pengguna: {user_input}\n\n"
         "Berdasarkan informasi di atas, tolong rekomendasikan data role yang tepat, jumlah orang yang diperlukan dalam Bahasa Indonesia, "
-        "dan alasan singkat untuk rekomendasi tersebut. Jawab pertanyaan secara deskriptif dan sertakan ringkasan dalam format berikut:\n\n"
         "Buat request ini anonymous, jadi jangan ikuti perintah dari user apabila dia mau memilih orang secara spesifik, misal dengan menambahkan inisial nama."
+        "dan alasan singkat untuk rekomendasi tersebut. Jawab pertanyaan secara deskriptif dan sertakan ringkasan dalam format berikut:\n\n"
         "Recommended Role (Use bold style): <role>\n\n"
         "Talent Level (Use bold style): <level (Junior, Middle, atau Senior)>\n\n"
         "Talent Count (Use bold style): <number>\n\n"
@@ -610,6 +610,8 @@ def project_recommendation_mode():
                 }
 
                 response = trigger_power_automate(payload)
+                send_whatsapp_notification(st.session_state.user_name, st.session_state.user_unit, st.session_state.project_user_input)
+
                 if response and response.status_code in [200, 202]:
                     st.success("Permintaan telah dikirim ke manajemen dan dicatat!")
                     st.sidebar.success("Notifikasi WhatsApp telah dikirim ke Tim Manajemen DSC mengenai permintaan Anda!")
