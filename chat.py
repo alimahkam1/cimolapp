@@ -677,7 +677,7 @@ custom_css = """
     }
 
 .st-emotion-cache-1lkozj7 .stTooltipHoverTarget > svg {
-        color: #1F2C2F;
+        stroke: #1F2C2F;
     }
 
 </style>
