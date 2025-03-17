@@ -16,7 +16,7 @@ from docxtpl import DocxTemplate
 # -------------------------------
 # Inisialisasi Data & PDF
 # -------------------------------
-flow_url = ["http"]["flow_url"]
+flow_url = st.secrets["http"]["flow_url"]
 todays_date = datetime.now().strftime("%Y-%m-%d_%H_%M_%S")
 
 try:
